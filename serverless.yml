@@ -1,0 +1,13 @@
+service: notification-fuzzer
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-east-1
+
+functions:
+  follow:
+    handler: handler.follow
+    events: 
+      -schedule: rate(1 hours)
+
