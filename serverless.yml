@@ -10,4 +10,5 @@ functions:
     handler: handler.follow
     events: 
       - schedule: rate(60 minutes)
+    timeout: 60
 
