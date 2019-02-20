@@ -9,5 +9,5 @@ functions:
   follow:
     handler: handler.follow
     events: 
-      -schedule: rate(1 hours)
+      - schedule: rate(60 minutes)
 

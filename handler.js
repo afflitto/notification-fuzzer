@@ -13,7 +13,6 @@ module.exports.follow = (event, context, callback) => {
       let followers = data.users;
       console.log('followers (data.ids):', followers)
 
-
       followers.forEach(follower => {
         let user = {
           user_id: follower.id_str
