@@ -8,7 +8,11 @@ provider:
 functions:
   follow:
     handler: handler.follow
-    events: 
-      - schedule: rate(60 minutes)
+    events:
+      - schedule: rate(47 minutes)
     timeout: 60
-
+  speak:
+    handler: handler.speak
+    events:
+      - schedule: rate(109 minutes)
+    timeout: 60
