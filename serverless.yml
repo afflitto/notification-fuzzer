@@ -4,6 +4,7 @@ provider:
   name: aws
   runtime: nodejs8.10
   region: us-east-1
+  profile: personal
   apiKeys:
     - nf-${self:custom.stage}-key
   usagePlan:
@@ -33,7 +34,7 @@ functions:
           method: get
           private: true
           cors: true
-    timeout: 60
+    timeout: 30
 
 
 custom:

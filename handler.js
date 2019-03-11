@@ -23,7 +23,7 @@ async function generateTweet() {
 
     const options = {
       maxTries: 300,
-      filter: (result) => result.string.length <= 280 && result.score > 20
+      filter: (result) => result.string.length <= 280 && result.score > 10
     }
 
     const result = markov.generate(options);
@@ -71,23 +71,12 @@ module.exports.follow = (event, context, callback) => {
 };
 
 module.exports.speak = async (event, context, callback) => {
-  //https://archive.org/stream/ThePsychologyOfPersuasion/The%20Psychology%20of%20Persuasion_djvu.txt
-  //https://archive.org/stream/EMCDDAAddictionNeurobiology/EMCDDA%20Addiction%20neurobiology_djvu.txt
-
-  const tweet = await generateTweet();
-  if(tweet) {
-    console.log(tweet);
-
-    T.post('statuses/update', {status: tweet.string}, (err, data, response) => { //send tweet
-      if(err) {
-        console.error(err);
-      } else {
-        console.log("successfully sent tweet");
-        return result
-      }
-    });
-  } else {
-    console.error('error yo')
+  try {
+    const tweet = await generateTweet();
+    await T.post('statuses/update', {status: tweet.string});
+    return tweet;
+  } catch(err) {
+    console.error(err)
   }
 };
 
