@@ -7,6 +7,10 @@ const Twitter = require('twitter');
 const config = require('./config.js');
 const T = new Twitter(config);
 
+const AWS = require('aws-sdk');
+const ses = new AWS.SES();
+const sns = new AWS.SNS();
+
 const readFile = promisify(fs.readFile);
 
 async function generateTweet() {
@@ -71,12 +75,49 @@ module.exports.follow = (event, context, callback) => {
 };
 
 module.exports.speak = async (event, context, callback) => {
+
+
   try {
     const tweet = await generateTweet();
+
+    const emailParams = {
+      Destination: {
+        ToAddresses: [
+          config.email
+        ]
+      },
+      Message: {
+        Body: {
+          Html: {
+            Charset: 'UTF-8',
+            Data: tweet.string
+          },
+          Text: {
+            Charset: 'UTF-8',
+            Data: tweet.string
+          }
+        },
+        Subject: {
+          Data: 'follow fuzzer',
+          Charset: 'UTF-8'
+        }
+      },
+      Source: 'fuzzer@afflitto.tech'
+    };
+
+    const smsParams = {
+      Message: tweet.string,
+      PhoneNumber: config.phone
+    };
+
     await T.post('statuses/update', {status: tweet.string});
+    await ses.sendEmail(emailParams).promise();
+    await sns.publish(smsParams).promise();
+
     return tweet;
   } catch(err) {
     console.error(err)
+    return err;
   }
 };
 
@@ -86,7 +127,7 @@ module.exports.generate = async (event, context, callback) => {
   if(tweet) {
     return response(200, {tweet: tweet.string});
   } else {
-    return response(500, 'nah lol');
+    return response(500, 'error');
   }
 
   function response(status, body) {
