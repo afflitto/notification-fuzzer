@@ -102,7 +102,7 @@ module.exports.speak = async (event, context, callback) => {
           Charset: 'UTF-8'
         }
       },
-      Source: 'fuzzer@afflitto.tech'
+      Source: 'fuzzer@fuzzer.afflitto.tech'
     };
 
     const smsParams = {
