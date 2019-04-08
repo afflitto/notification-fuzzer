@@ -4,8 +4,6 @@ const {promisify} = require('util');
 const fs = require('fs');
 const Markov = require('markov-strings').default;
 const Twitter = require('twitter');
-const config = require('./config.js');
-const T = new Twitter(config);
 
 const AWS = require('aws-sdk');
 const ses = new AWS.SES();
@@ -38,9 +36,14 @@ async function generateTweet() {
 }
 
 module.exports.follow = (event, context, callback) => {
-  const T = new Twitter(config);
+  const config = require('./config.js');
+  let accounts = [];
+  config.accounts.forEach(account => {
+    accounts.push(new Twitter(account));
+  });
 
-  T.get('followers/list', (err, data, response) => {
+  //get followers of root account
+  accounts[0].get('followers/list', (err, data, response) => {
     if(err) {
       console.log(err);
     } else {
@@ -52,22 +55,27 @@ module.exports.follow = (event, context, callback) => {
           user_id: follower.id_str
         }
 
-        T.post('friendships/destroy', user, (err, data, response) => {
-          if (err && err[0].code != 34) { //if 34, that means we're not following them in the first place
-            console.log(err, user.user_id)
-          } else {
-            console.log('Unfollowed: ', user.user_id);
+        //for each fuzzer account
+        accounts.forEach(account => {
+          //unfollow
+          account.post('friendships/destroy', user, (err, data, response) => {
+            if (err && err[0].code != 34) { //if 34, that means we're not following them in the first place
+              console.log(err, user.user_id)
+            } else {
+              console.log('Unfollowed: ', user.user_id);
 
-            setTimeout(() => {
-              T.post('friendships/create', user, (err, data, response) => {
-                if (err) {
-                  console.log(err, user.user_id)
-                } else {
-                  console.log('Followed: ', user.user_id);
-                }
-              });
-            }, 250);
-          }
+              setTimeout(() => {
+                //follow
+                account.post('friendships/create', user, (err, data, response) => {
+                  if (err) {
+                    console.log(err, user.user_id)
+                  } else {
+                    console.log('Followed: ', user.user_id);
+                  }
+                });
+              }, 250);
+            }
+          });
         });
       });
     }
@@ -75,8 +83,7 @@ module.exports.follow = (event, context, callback) => {
 };
 
 module.exports.speak = async (event, context, callback) => {
-
-
+  const config = require('./config.js');
   try {
     const tweet = await generateTweet();
 
@@ -110,7 +117,15 @@ module.exports.speak = async (event, context, callback) => {
       PhoneNumber: config.phone
     };
 
-    await T.post('statuses/update', {status: tweet.string});
+    let accounts = [];
+    config.accounts.forEach(account => {
+      accounts.push(new Twitter(account));
+    });
+
+    for(let account of accounts) {
+      await account.post('statuses/update', {status: tweet.string});
+    }
+
     await ses.sendEmail(emailParams).promise();
     await sns.publish(smsParams).promise();
 
